@@ -1,0 +1,21 @@
+{
+  "name": "landing-page-fabricante-polo",
+  "version": "1.0.0",
+  "description": "Landing page para venda de acesso ao fabricante de camisas polo",
+  "main": "src/index.html",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "serve": "npx http-server src -p 8080 -o"
+  },
+  "keywords": ["landing-page", "fabricante", "polo"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "fast-check": "^3.15.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^23.2.0"
+  }
+}

@@ -476,6 +476,10 @@
             }
 
             try {
+                console.log('📤 Enviando venda para o backend...');
+                console.log('Lead ID:', currentLeadId);
+                console.log('Valor:', saleValue);
+
                 const response = await fetch('/api/sale', {
                     method: 'POST',
                     headers: { 
@@ -490,15 +494,24 @@
 
                 const data = await response.json();
 
+                console.log('📥 Resposta do backend:', data);
+
                 if (response.ok) {
-                    alert('✅ Venda registrada com sucesso!\n\nEvento enviado para Meta Conversions API.');
+                    if (data.meta_success) {
+                        alert('✅ Venda registrada com sucesso!\n\n✅ Evento Purchase enviado para Meta Conversions API.\n\nVerifique no Events Manager em alguns minutos.');
+                    } else {
+                        alert('⚠️ Venda registrada no banco, MAS evento NÃO foi enviado para o Meta!\n\nErro: ' + JSON.stringify(data.meta_response?.error || 'Erro desconhecido', null, 2));
+                        console.error('❌ Erro do Meta:', data.meta_response);
+                    }
                     closeModal();
                     loadData();
                 } else {
                     alert('❌ Erro: ' + (data.error || 'Erro ao registrar venda'));
+                    console.error('❌ Erro completo:', data);
                 }
             } catch (error) {
                 alert('❌ Erro ao registrar venda: ' + error.message);
+                console.error('❌ Erro de rede:', error);
             }
         }
 

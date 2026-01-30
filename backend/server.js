@@ -10,8 +10,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session');
-const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
 const db = require('./database');
@@ -19,6 +18,7 @@ const meta = require('./metaConversions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.SESSION_SECRET || 'default-secret-change-me';
 
 // Middlewares
 app.use(cors({
@@ -35,29 +35,27 @@ app.use(express.static('public'));
 // Servir arquivos da landing page (pasta src)
 app.use(express.static('../src'));
 
-// Configurar sessões
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'default-secret-change-me',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
-  }
-}));
-
 // Inicializar banco de dados
 db.initDatabase();
 
 /**
- * Middleware de autenticação
+ * Middleware de autenticação JWT
  */
 function requireAuth(req, res, next) {
-  if (req.session.authenticated) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token não fornecido' });
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
     next();
-  } else {
-    res.status(401).json({ error: 'Não autenticado' });
+  } catch (error) {
+    return res.status(401).json({ error: 'Token inválido ou expirado' });
   }
 }
 
@@ -150,12 +148,22 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ error: 'Senha não fornecida' });
   }
 
-  // Comparar senha (em produção, use hash)
+  // Comparar senha
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
   
   if (password === adminPassword) {
-    req.session.authenticated = true;
-    res.json({ success: true, message: 'Login realizado com sucesso' });
+    // Gerar JWT token
+    const token = jwt.sign(
+      { authenticated: true, timestamp: Date.now() },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Login realizado com sucesso',
+      token
+    });
   } else {
     res.status(401).json({ error: 'Senha incorreta' });
   }
@@ -163,13 +171,25 @@ app.post('/api/login', async (req, res) => {
 
 // POST /api/logout
 app.post('/api/logout', (req, res) => {
-  req.session.destroy();
   res.json({ success: true, message: 'Logout realizado' });
 });
 
 // GET /api/check-auth
 app.get('/api/check-auth', (req, res) => {
-  res.json({ authenticated: !!req.session.authenticated });
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.json({ authenticated: false });
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    jwt.verify(token, JWT_SECRET);
+    res.json({ authenticated: true });
+  } catch (error) {
+    res.json({ authenticated: false });
+  }
 });
 
 /**

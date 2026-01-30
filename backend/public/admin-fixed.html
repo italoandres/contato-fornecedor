@@ -90,6 +90,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-left: 10px;
         }
 
         .stats {
@@ -121,8 +122,9 @@
         .leads-table {
             background: white;
             border-radius: 8px;
+            padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
+            overflow-x: auto;
         }
 
         table {
@@ -130,26 +132,19 @@
             border-collapse: collapse;
         }
 
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
         th {
             background-color: #f8f9fa;
-            padding: 15px;
-            text-align: left;
             font-weight: 600;
             color: #333;
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        tr:hover {
-            background-color: #f8f9fa;
         }
 
         .badge {
-            display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
@@ -167,7 +162,7 @@
         }
 
         .btn-sale {
-            padding: 8px 16px;
+            padding: 6px 12px;
             background-color: #28a745;
             color: white;
             border: none;
@@ -266,7 +261,7 @@
         <div class="header">
             <h1>📊 Painel de Gestão de Vendas</h1>
             <div>
-                <button class="logout-btn" onclick="sendTestEvent()" style="background-color: #007bff; margin-right: 10px;">🧪 Enviar Evento Teste</button>
+                <button class="logout-btn" onclick="sendTestEvent()" style="background-color: #007bff;">🧪 Enviar Evento Teste</button>
                 <button class="logout-btn" onclick="logout()">Sair</button>
             </div>
         </div>
@@ -326,50 +321,15 @@
 
     <script>
         let currentLeadId = null;
-
-        // Funções de gerenciamento de token
-        function getToken() {
-            return localStorage.getItem('admin_token');
-        }
-
-        function setToken(token) {
-            localStorage.setItem('admin_token', token);
-        }
-
-        function removeToken() {
-            localStorage.removeItem('admin_token');
-        }
-
-        function getAuthHeaders() {
-            const token = getToken();
-            return token ? { 'Authorization': `Bearer ${token}` } : {};
-        }
+        let authToken = localStorage.getItem('admin_token');
 
         // Verificar autenticação ao carregar
         checkAuth();
 
-        async function checkAuth() {
-            try {
-                const token = getToken();
-                if (!token) {
-                    showLogin();
-                    return;
-                }
-
-                const response = await fetch('/api/check-auth', {
-                    headers: getAuthHeaders()
-                });
-                const data = await response.json();
-                
-                if (data.authenticated) {
-                    showDashboard();
-                } else {
-                    removeToken();
-                    showLogin();
-                }
-            } catch (error) {
-                console.error('Erro ao verificar autenticação:', error);
-                removeToken();
+        function checkAuth() {
+            if (authToken) {
+                showDashboard();
+            } else {
                 showLogin();
             }
         }
@@ -387,8 +347,10 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.token) {
-                    setToken(data.token);
+                if (response.ok) {
+                    // Salvar token no localStorage
+                    authToken = data.token || 'authenticated';
+                    localStorage.setItem('admin_token', authToken);
                     showDashboard();
                 } else {
                     errorDiv.textContent = data.error || 'Senha incorreta';
@@ -400,12 +362,9 @@
             }
         }
 
-        async function logout() {
-            await fetch('/api/logout', { 
-                method: 'POST',
-                headers: getAuthHeaders()
-            });
-            removeToken();
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('admin_token');
             showLogin();
         }
 
@@ -428,7 +387,9 @@
         async function loadStats() {
             try {
                 const response = await fetch('/api/stats', {
-                    headers: getAuthHeaders()
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
                 });
                 const data = await response.json();
 
@@ -448,7 +409,9 @@
         async function loadLeads() {
             try {
                 const response = await fetch('/api/leads', {
-                    headers: getAuthHeaders()
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
                 });
                 const data = await response.json();
 
@@ -494,7 +457,7 @@
         function openSaleModal(leadId) {
             currentLeadId = leadId;
             document.getElementById('modalLeadId').textContent = leadId.substring(0, 8) + '...';
-            document.getElementById('saleValue').value = '997.00';
+            document.getElementById('saleValue').value = '597.00';
             document.getElementById('saleModal').style.display = 'block';
         }
 
@@ -514,8 +477,10 @@
             try {
                 const response = await fetch('/api/sale', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
                     body: JSON.stringify({
                         lead_id: currentLeadId,
                         sale_value: parseFloat(saleValue)
@@ -536,36 +501,31 @@
             }
         }
 
-        // Atualizar dados a cada 30 segundos
-        setInterval(loadData, 30000);
-
-        // Enviar evento de teste para Meta
         async function sendTestEvent() {
-            if (!confirm('Enviar um evento de TESTE para o Facebook?\n\n' +
-                        'Este evento aparecerá na aba "Test Events" do Events Manager.\n' +
-                        'Código de teste: TEST90044')) {
+            if (!confirm('Enviar um evento de TESTE para o Facebook?\n\nCódigo de teste: TEST90044')) {
                 return;
             }
 
             try {
                 const response = await fetch('/api/send-test-event', {
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
                 });
                 const data = await response.json();
 
                 if (data.success) {
-                    alert('✅ Evento de teste enviado com sucesso!\n\n' + 
-                          '📍 Código de teste: TEST90044\n\n' +
-                          'Verifique em:\n' +
-                          'Events Manager > Test Events\n\n' +
-                          'O evento deve aparecer AGORA na página de Test Events!');
+                    alert('✅ Evento de teste enviado!\n\n📍 Código: TEST90044\n\nVerifique em: Events Manager > Test Events');
                 } else {
-                    alert('❌ Erro ao enviar evento de teste:\n' + JSON.stringify(data.error, null, 2));
+                    alert('❌ Erro: ' + JSON.stringify(data.error, null, 2));
                 }
             } catch (error) {
                 alert('❌ Erro: ' + error.message);
             }
         }
+
+        // Atualizar dados a cada 30 segundos
+        setInterval(loadData, 30000);
     </script>
 </body>
 </html>

@@ -258,7 +258,9 @@ app.post('/api/sale', requireAuth, async (req, res) => {
 
     // Enviar para Meta com retry
     console.log('📤 Enviando evento Purchase para Meta...');
+    console.log('Event Data:', JSON.stringify(eventData, null, 2));
     const metaResult = await meta.sendPurchaseEventWithRetry(eventData);
+    console.log('Meta Result:', JSON.stringify(metaResult, null, 2));
 
     // Salvar venda no banco
     const saleData = {

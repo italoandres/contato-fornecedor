@@ -168,10 +168,39 @@ function trackWhatsAppClick() {
     whatsappButton.addEventListener('click', function() {
       console.log('📱 Clique no botão WhatsApp rastreado');
       
-      // Você pode enviar um evento adicional aqui se desejar
       const leadId = localStorage.getItem('lead_id');
       console.log('Lead ID:', leadId);
+      
+      // Enviar evento para o Facebook Pixel (browser)
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'Contact', {
+          content_name: 'WhatsApp Button Click',
+          content_category: 'Lead Generation'
+        });
+        console.log('✅ Evento Contact enviado para Facebook Pixel');
+      }
+      
+      // Opcional: Enviar para backend também
+      sendWhatsAppClickToBackend(leadId);
     });
+  }
+}
+
+/**
+ * Enviar clique no WhatsApp para o backend (opcional)
+ */
+async function sendWhatsAppClickToBackend(leadId) {
+  if (!leadId) return;
+  
+  try {
+    await fetch(`${BACKEND_URL}/api/whatsapp-click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadId })
+    });
+    console.log('✅ Clique no WhatsApp registrado no backend');
+  } catch (error) {
+    console.error('❌ Erro ao registrar clique:', error);
   }
 }
 

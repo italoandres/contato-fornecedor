@@ -332,7 +332,9 @@
 
         async function checkAuth() {
             try {
-                const response = await fetch('/api/check-auth');
+                const response = await fetch('/api/check-auth', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
                 
                 if (data.authenticated) {
@@ -354,6 +356,7 @@
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ password })
                 });
 
@@ -372,7 +375,10 @@
         }
 
         async function logout() {
-            await fetch('/api/logout', { method: 'POST' });
+            await fetch('/api/logout', { 
+                method: 'POST',
+                credentials: 'include'
+            });
             showLogin();
         }
 
@@ -394,7 +400,9 @@
 
         async function loadStats() {
             try {
-                const response = await fetch('/api/stats');
+                const response = await fetch('/api/stats', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 if (data.success) {
@@ -412,7 +420,9 @@
 
         async function loadLeads() {
             try {
-                const response = await fetch('/api/leads');
+                const response = await fetch('/api/leads', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 if (data.success) {
@@ -478,6 +488,7 @@
                 const response = await fetch('/api/sale', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         lead_id: currentLeadId,
                         sale_value: parseFloat(saleValue)
@@ -510,7 +521,9 @@
             }
 
             try {
-                const response = await fetch('/api/send-test-event');
+                const response = await fetch('/api/send-test-event', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 if (data.success) {

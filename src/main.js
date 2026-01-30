@@ -6,7 +6,7 @@
  */
 
 // Configuração do backend
-const BACKEND_URL = 'http://localhost:3000'; // Altere para sua URL de produção
+const BACKEND_URL = 'https://contato-fornecedor-backend.onrender.com'; // URL de produção
 
 /**
  * Gerar cookie _fbp (Facebook Browser Pixel)

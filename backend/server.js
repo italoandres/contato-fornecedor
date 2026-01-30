@@ -431,6 +431,52 @@ app.get('/api/events', requireAuth, (req, res) => {
   }
 });
 
+// GET /api/create-test-lead
+app.get('/api/create-test-lead', requireAuth, (req, res) => {
+  try {
+    const lead_id = uuidv4();
+    const timestamp = Date.now();
+
+    const testLead = {
+      lead_id,
+      utm_source: 'facebook',
+      utm_medium: 'cpc',
+      utm_campaign: 'teste_conversions_api',
+      utm_content: 'anuncio_teste',
+      fbclid: `test_fbclid_${timestamp}`,
+      fbp: `fb.1.${timestamp}.123456789`,
+      fbc: `fb.1.${timestamp}.test_fbclid_${timestamp}`,
+      client_ip: '177.45.123.45',
+      client_user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    };
+
+    const result = db.insertLead(testLead);
+
+    if (result.success) {
+      console.log('✅ Lead de teste criado:', lead_id);
+      res.json({
+        success: true,
+        message: 'Lead de teste criado com sucesso!',
+        lead: testLead,
+        instructions: [
+          'Procure pelo lead com campanha: teste_conversions_api',
+          'Marque venda nesse lead (valor: 597)',
+          'Aguarde 10-15 minutos',
+          'Verifique no Events Manager'
+        ]
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Erro ao criar lead de teste'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Erro ao criar lead de teste:', error);
+    res.status(500).json({ error: 'Erro ao criar lead de teste' });
+  }
+});
+
 /**
  * Iniciar servidor
  */

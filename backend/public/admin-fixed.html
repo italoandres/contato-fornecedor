@@ -262,6 +262,7 @@
             <h1>📊 Painel de Gestão de Vendas</h1>
             <div>
                 <button class="logout-btn" onclick="window.location.href='/admin-eventos.html'" style="background-color: #28a745;">📊 Ver Eventos</button>
+                <button class="logout-btn" onclick="createTestLead()" style="background-color: #17a2b8;">🧪 Criar Lead Teste</button>
                 <button class="logout-btn" onclick="sendTestEvent()" style="background-color: #007bff;">🧪 Enviar Evento Teste</button>
                 <button class="logout-btn" onclick="logout()">Sair</button>
             </div>
@@ -494,7 +495,7 @@
 
                 const data = await response.json();
 
-                console.log('📥 Resposta do backend:', data);
+                console.log('📥 Resposta do backend:', JSON.stringify(data, null, 2));
 
                 if (response.ok) {
                     if (data.meta_success) {
@@ -532,6 +533,37 @@
                     alert('✅ Evento de teste enviado!\n\n📍 Código: TEST90044\n\nVerifique em: Events Manager > Test Events');
                 } else {
                     alert('❌ Erro: ' + JSON.stringify(data.error, null, 2));
+                }
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        }
+
+        async function createTestLead() {
+            if (!confirm('Criar um lead de TESTE com fbp e fbc válidos?\n\nEsse lead pode ser usado para testar o envio de eventos Purchase.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/create-test-lead', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Lead de teste criado com sucesso!\n\n' +
+                          '📍 Procure pelo lead com:\n' +
+                          '   - Origem: facebook\n' +
+                          '   - Campanha: teste_conversions_api\n\n' +
+                          '📍 Marque venda nesse lead (valor: 597)\n\n' +
+                          '📍 Aguarde 10-15 minutos e verifique no Events Manager');
+                    
+                    // Recarregar a lista de leads
+                    loadData();
+                } else {
+                    alert('❌ Erro: ' + (data.error || 'Erro ao criar lead'));
                 }
             } catch (error) {
                 alert('❌ Erro: ' + error.message);

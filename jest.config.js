@@ -1,6 +1,7 @@
 module.exports = {
   testEnvironment: 'jsdom',
   testMatch: ['**/tests/**/*.test.js'],
+  setupFiles: ['<rootDir>/tests/setup.js'],
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/**/*.test.js'
@@ -12,5 +13,9 @@ module.exports = {
       lines: 80,
       statements: 80
     }
+  },
+  globals: {
+    TextEncoder: require('util').TextEncoder,
+    TextDecoder: require('util').TextDecoder
   }
 };

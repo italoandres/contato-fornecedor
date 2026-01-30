@@ -15,6 +15,79 @@ function hashSHA256(data) {
 }
 
 /**
+ * Enviar evento Contact para Meta Conversions API
+ * 
+ * @param {Object} eventData - Dados do evento
+ * @param {string} eventData.lead_id - ID do lead
+ * @param {string} eventData.event_id - ID único do evento
+ * @param {string} eventData.fbp - Cookie _fbp
+ * @param {string} eventData.fbc - Cookie _fbc
+ * @param {string} eventData.client_ip - IP do cliente
+ * @param {string} eventData.client_user_agent - User Agent do cliente
+ * @param {number} eventData.event_time - Timestamp do evento
+ */
+async function sendContactEvent(eventData) {
+  const pixelId = process.env.META_PIXEL_ID;
+  const accessToken = process.env.META_ACCESS_TOKEN;
+
+  if (!pixelId || !accessToken) {
+    throw new Error('META_PIXEL_ID e META_ACCESS_TOKEN devem estar configurados no .env');
+  }
+
+  const url = `https://graph.facebook.com/v18.0/${pixelId}/events`;
+
+  // Preparar dados do evento Contact
+  const eventPayload = {
+    data: [
+      {
+        event_name: 'Contact',
+        event_time: eventData.event_time || Math.floor(Date.now() / 1000),
+        event_id: eventData.event_id,
+        action_source: 'website',
+        event_source_url: eventData.event_source_url || 'https://contatofornecedor.netlify.app',
+        user_data: {
+          client_ip_address: eventData.client_ip,
+          client_user_agent: eventData.client_user_agent,
+          fbp: eventData.fbp,
+          fbc: eventData.fbc
+        },
+        custom_data: {
+          content_name: 'WhatsApp Button Click',
+          content_category: 'Lead Generation',
+          lead_id: eventData.lead_id
+        }
+      }
+    ],
+    access_token: accessToken
+  };
+
+  try {
+    console.log('📤 Enviando evento Contact para Meta...');
+    console.log('Event ID:', eventData.event_id);
+
+    const response = await axios.post(url, eventPayload);
+
+    console.log('✅ Evento Contact enviado com sucesso!');
+    console.log('Resposta Meta:', JSON.stringify(response.data, null, 2));
+
+    return {
+      success: true,
+      response: response.data,
+      eventId: eventData.event_id
+    };
+
+  } catch (error) {
+    console.error('❌ Erro ao enviar evento Contact para Meta:', error.response?.data || error.message);
+    
+    return {
+      success: false,
+      error: error.response?.data || error.message,
+      eventId: eventData.event_id
+    };
+  }
+}
+
+/**
  * Enviar evento Purchase para Meta Conversions API
  * 
  * @param {Object} eventData - Dados do evento
@@ -46,7 +119,7 @@ async function sendPurchaseEvent(eventData) {
         event_time: eventData.event_time || Math.floor(Date.now() / 1000),
         event_id: eventData.event_id,
         action_source: 'website',
-        event_source_url: eventData.event_source_url || 'https://seu-dominio.com',
+        event_source_url: eventData.event_source_url || 'https://contatofornecedor.netlify.app',
         user_data: {
           client_ip_address: eventData.client_ip,
           client_user_agent: eventData.client_user_agent,
@@ -237,6 +310,7 @@ async function sendTestEvent() {
 }
 
 module.exports = {
+  sendContactEvent,
   sendPurchaseEvent,
   sendPurchaseEventWithRetry,
   testMetaConnection,

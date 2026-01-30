@@ -1,17 +1,6 @@
 // Configuração de testes
-const { JSDOM } = require('jsdom');
+const { TextEncoder, TextDecoder } = require('util');
 
-// Função helper para renderizar a landing page em testes
-global.renderLandingPage = (config) => {
-  const dom = new JSDOM(`
-    <!DOCTYPE html>
-    <html>
-      <body></body>
-    </html>
-  `);
-  
-  global.document = dom.window.document;
-  global.window = dom.window;
-  
-  return dom.window.document;
-};
+// Polyfills para JSDOM
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;

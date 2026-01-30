@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos - Painel Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filters h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h4 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .events-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .lead-group {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .lead-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lead-header:hover {
+            background: #e9ecef;
+        }
+
+        .lead-info {
+            flex: 1;
+        }
+
+        .lead-id {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .lead-meta {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .event-count {
+            background: #007bff;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .events-list {
+            display: none;
+            padding: 0;
+        }
+
+        .events-list.expanded {
+            display: block;
+        }
+
+        .event-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .event-time {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .event-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-pageview {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-contact {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-purchase {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .no-events {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Histórico de Eventos</h1>
+            <div>
+                <button class="btn btn-secondary" onclick="window.location.href='/admin-fixed.html'">← Voltar</button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+            <h3>🔍 Filtros</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Data Início</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label>Data Fim</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="filter-group">
+                    <label>Lead ID (opcional)</label>
+                    <input type="text" id="leadIdFilter" placeholder="Digite o Lead ID">
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="loadEvents()">Filtrar</button>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Limpar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h4>PageViews</h4>
+                <div class="value" id="statPageViews">-</div>
+            </div>
+            <div class="stat-card">
+                <h4>Contatos (WhatsApp)</h4>
+                <div class="value" id="statContacts">-</div>
+            </div>
+            <div class="stat-card">
+                <h4>Compras</h4>
+                <div class="value" id="statPurchases">-</div>
+            </div>
+            <div class="stat-card">
+                <h4>Total de Eventos</h4>
+                <div class="value" id="statTotal">-</div>
+            </div>
+        </div>
+
+        <!-- Lista de Eventos Agrupados -->
+        <div class="events-container">
+            <div id="eventsContent">
+                <div class="loading">Carregando eventos...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('admin_token');
+
+        // Verificar autenticação
+        if (!authToken) {
+            window.location.href = '/admin-fixed.html';
+        }
+
+        // Definir data padrão (últimos 7 dias)
+        const today = new Date();
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        document.getElementById('startDate').valueAsDate = weekAgo;
+        document.getElementById('endDate').valueAsDate = today;
+
+        // Carregar eventos ao iniciar
+        loadEvents();
+
+        async function loadEvents() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const leadId = document.getElementById('leadIdFilter').value.trim();
+
+            let url = '/api/events?';
+            if (startDate) url += `start_date=${startDate}&`;
+            if (endDate) url += `end_date=${endDate}&`;
+            if (leadId) url += `lead_id=${leadId}`;
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    renderStats(data.stats);
+                    renderEvents(data.events);
+                } else {
+                    document.getElementById('eventsContent').innerHTML = 
+                        '<div class="no-events">Erro ao carregar eventos</div>';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('eventsContent').innerHTML = 
+                    '<div class="no-events">Erro ao carregar eventos</div>';
+            }
+        }
+
+        function renderStats(stats) {
+            document.getElementById('statPageViews').textContent = stats.pageViews || 0;
+            document.getElementById('statContacts').textContent = stats.contacts || 0;
+            document.getElementById('statPurchases').textContent = stats.purchases || 0;
+            document.getElementById('statTotal').textContent = 
+                (stats.pageViews || 0) + (stats.contacts || 0) + (stats.purchases || 0);
+        }
+
+        function renderEvents(events) {
+            const container = document.getElementById('eventsContent');
+
+            if (events.length === 0) {
+                container.innerHTML = '<div class="no-events">Nenhum evento encontrado</div>';
+                return;
+            }
+
+            // Agrupar eventos por lead_id
+            const groupedEvents = {};
+            events.forEach(event => {
+                if (!groupedEvents[event.lead_id]) {
+                    groupedEvents[event.lead_id] = {
+                        lead_id: event.lead_id,
+                        utm_source: event.utm_source,
+                        utm_campaign: event.utm_campaign,
+                        events: []
+                    };
+                }
+                groupedEvents[event.lead_id].events.push(event);
+            });
+
+            // Renderizar grupos
+            const html = Object.values(groupedEvents).map(group => {
+                const eventsHtml = group.events.map(event => {
+                    const badgeClass = 
+                        event.event_name === 'PageView' ? 'badge-pageview' :
+                        event.event_name === 'Contact' ? 'badge-contact' :
+                        'badge-purchase';
+
+                    const eventTime = new Date(event.created_at).toLocaleString('pt-BR');
+
+                    return `
+                        <div class="event-item">
+                            <div class="event-info">
+                                <div class="event-name">${event.event_name}</div>
+                                <div class="event-time">${eventTime}</div>
+                            </div>
+                            <span class="event-badge ${badgeClass}">${event.event_type}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="lead-group">
+                        <div class="lead-header" onclick="toggleEvents('${group.lead_id}')">
+                            <div class="lead-info">
+                                <div class="lead-id">Lead: ${group.lead_id.substring(0, 12)}...</div>
+                                <div class="lead-meta">
+                                    ${group.utm_source ? `Origem: ${group.utm_source}` : ''}
+                                    ${group.utm_campaign ? ` | Campanha: ${group.utm_campaign}` : ''}
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span class="event-count">${group.events.length} eventos</span>
+                                <span class="toggle-icon" id="icon-${group.lead_id}">▼</span>
+                            </div>
+                        </div>
+                        <div class="events-list" id="events-${group.lead_id}">
+                            ${eventsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function toggleEvents(leadId) {
+            const eventsList = document.getElementById(`events-${leadId}`);
+            const icon = document.getElementById(`icon-${leadId}`);
+            
+            eventsList.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+
+        function clearFilters() {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            
+            document.getElementById('startDate').valueAsDate = weekAgo;
+            document.getElementById('endDate').valueAsDate = new Date();
+            document.getElementById('leadIdFilter').value = '';
+            
+            loadEvents();
+        }
+
+        // Atualizar a cada 30 segundos
+        setInterval(loadEvents, 30000);
+    </script>
+</body>
+</html>

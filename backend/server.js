@@ -114,6 +114,15 @@ app.post('/api/lead', (req, res) => {
 
     if (result.success) {
       console.log('✅ Novo lead registrado:', lead_id);
+      
+      // Registrar evento PageView no histórico
+      db.insertEvent({
+        lead_id,
+        event_type: 'pageview',
+        event_name: 'PageView',
+        event_data: { utm_source, utm_campaign, fbclid }
+      });
+      
       res.json({ 
         success: true, 
         lead_id,
@@ -132,6 +141,69 @@ app.post('/api/lead', (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+/**
+ * POST /api/whatsapp-click
+ * Recebe clique no botão WhatsApp e envia evento Contact para Meta
+ */
+app.post('/api/whatsapp-click', async (req, res) => {
+  try {
+    const { lead_id } = req.body;
+
+    if (!lead_id) {
+      return res.status(400).json({ error: 'lead_id é obrigatório' });
+    }
+
+    // Buscar dados do lead
+    const lead = db.getLeadById(lead_id);
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead não encontrado' });
+    }
+
+    // Gerar event_id único
+    const event_id = `contact_${lead_id}_${Date.now()}`;
+
+    // Preparar dados para Meta Conversions API
+    const eventData = {
+      lead_id,
+      event_id,
+      fbp: lead.fbp,
+      fbc: lead.fbc,
+      client_ip: lead.client_ip,
+      client_user_agent: lead.client_user_agent,
+      event_time: Math.floor(Date.now() / 1000)
+    };
+
+    // Enviar para Meta
+    console.log('📤 Enviando evento Contact para Meta...');
+    const metaResult = await meta.sendContactEvent(eventData);
+
+    // Registrar evento no histórico
+    db.insertEvent({
+      lead_id,
+      event_type: 'contact',
+      event_name: 'Contact',
+      event_data: { event_id, channel: 'whatsapp' },
+      meta_response: metaResult
+    });
+
+    console.log('✅ Evento Contact registrado!');
+
+    res.json({
+      success: true,
+      message: 'Clique no WhatsApp registrado',
+      meta_success: metaResult.success,
+      meta_response: metaResult
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao processar clique WhatsApp:', error);
+    res.status(500).json({ 
+      error: 'Erro ao processar clique',
+      details: error.message 
     });
   }
 });
@@ -274,6 +346,15 @@ app.post('/api/sale', requireAuth, async (req, res) => {
     const dbResult = db.insertSale(saleData);
 
     if (dbResult.success) {
+      // Registrar evento Purchase no histórico
+      db.insertEvent({
+        lead_id,
+        event_type: 'purchase',
+        event_name: 'Purchase',
+        event_data: { event_id, value: sale_value, currency: 'BRL' },
+        meta_response: metaResult
+      });
+      
       console.log('✅ Venda registrada com sucesso!');
       res.json({
         success: true,
@@ -322,6 +403,31 @@ app.get('/api/send-test-event', requireAuth, async (req, res) => {
       success: false, 
       error: error.message 
     });
+  }
+});
+
+// GET /api/events
+app.get('/api/events', requireAuth, (req, res) => {
+  try {
+    const { start_date, end_date, lead_id } = req.query;
+    
+    let events;
+    if (lead_id) {
+      events = db.getEventsByLeadId(lead_id);
+    } else {
+      events = db.getAllEvents(start_date, end_date);
+    }
+    
+    const eventStats = db.getEventStats();
+    
+    res.json({ 
+      success: true, 
+      events,
+      stats: eventStats
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar eventos:', error);
+    res.status(500).json({ error: 'Erro ao buscar eventos' });
   }
 });
 

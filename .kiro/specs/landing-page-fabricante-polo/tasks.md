@@ -20,11 +20,11 @@ Este plano implementa uma landing page estática de página única focada em con
     - Garantir que headline contém produto, valor e proposta
     - _Requirements: 1.1, 1.2, 1.4_
 
-  - [ ] 2.2 Escrever teste de propriedade para estrutura do header
+  - [x] 2.2 Escrever teste de propriedade para estrutura do header
     - **Property 1: Estrutura do Header Completa**
     - **Validates: Requirements 1.1, 1.2**
 
-  - [ ] 2.3 Escrever teste de propriedade para posicionamento do header
+  - [x] 2.3 Escrever teste de propriedade para posicionamento do header
     - **Property 2: Headline como Primeiro Elemento**
     - **Validates: Requirements 1.4**
 
@@ -41,11 +41,11 @@ Este plano implementa uma landing page estática de página única focada em con
     - Incluir texto com negações (não é curso, franquia, renda fácil)
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 3.2 Escrever teste de propriedade para posicionamento do bloco
+  - [x] 3.2 Escrever teste de propriedade para posicionamento do bloco
     - **Property 3: Bloco de Qualificação Posicionado Corretamente**
     - **Validates: Requirements 2.1**
 
-  - [ ] 3.3 Escrever teste de propriedade para conteúdo do bloco
+  - [x] 3.3 Escrever teste de propriedade para conteúdo do bloco
     - **Property 4: Conteúdo do Bloco de Qualificação Completo**
     - **Validates: Requirements 2.2, 2.3**
 
@@ -62,7 +62,7 @@ Este plano implementa uma landing page estática de página única focada em con
     - Incluir parágrafo destacado sobre pagamento pelo acesso
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-  - [ ] 4.2 Escrever teste de propriedade para elementos da oferta
+  - [x] 4.2 Escrever teste de propriedade para elementos da oferta
     - **Property 5: Elementos Obrigatórios da Oferta Presentes**
     - **Validates: Requirements 3.1, 3.2, 3.3**
 
@@ -86,7 +86,7 @@ Este plano implementa uma landing page estática de página única focada em con
     - Adicionar parágrafo sobre não garantir sucesso
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ] 6.2 Escrever teste de propriedade para bloco de transparência
+  - [x] 6.2 Escrever teste de propriedade para bloco de transparência
     - **Property 6: Estrutura do Bloco de Transparência Completa**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
@@ -139,11 +139,11 @@ Este plano implementa uma landing page estática de página única focada em con
     - Incluir frase de ancoragem de valor (produção de 100 unidades)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4_
 
-  - [ ] 9.2 Escrever teste de propriedade para bloco de preço
+  - [x] 9.2 Escrever teste de propriedade para bloco de preço
     - **Property 9: Bloco de Preço Completo**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
 
-  - [ ] 9.3 Escrever teste de propriedade para ancoragem de valor
+  - [x] 9.3 Escrever teste de propriedade para ancoragem de valor
     - **Property 10: Ancoragem de Valor Sem Promessas**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4**
 
@@ -165,15 +165,15 @@ Este plano implementa uma landing page estática de página única focada em con
     - Garantir que é o único CTA principal na página
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 10.1, 10.2, 10.3, 10.4_
 
-  - [ ] 10.2 Escrever teste de propriedade para CTA alinhado com preço
+  - [x] 10.2 Escrever teste de propriedade para CTA alinhado com preço
     - **Property 11: CTA Alinhado com Preço**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6**
 
-  - [ ] 10.3 Escrever teste de propriedade para ausência de frases ambíguas
+  - [x] 10.3 Escrever teste de propriedade para ausência de frases ambíguas
     - **Property 12: Ausência de Frases Ambíguas no CTA**
     - **Validates: Requirements 9.6**
 
-  - [ ] 10.4 Escrever teste de propriedade para micro-escassez
+  - [x] 10.4 Escrever teste de propriedade para micro-escassez
     - **Property 13: Micro-Escassez Coerente**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4**
 
@@ -198,7 +198,7 @@ Este plano implementa uma landing page estática de página única focada em con
     - Garantir que não há overflow horizontal
     - _Requirements: 8.5_
 
-  - [ ] 12.2 Escrever teste de propriedade para responsividade
+  - [x] 12.2 Escrever teste de propriedade para responsividade
     - **Property 15: Responsividade Mobile**
     - **Validates: Requirements 11.5**
 
@@ -208,7 +208,7 @@ Este plano implementa uma landing page estática de página única focada em con
     - Aplicar fontes consistentes
     - _Requirements: 8.1, 8.2_
 
-  - [ ] 12.4 Escrever teste de propriedade para design visual
+  - [x] 12.4 Escrever teste de propriedade para design visual
     - **Property 14: Design Visual Limpo**
     - **Validates: Requirements 11.1, 11.3**
 
@@ -226,7 +226,7 @@ Este plano implementa uma landing page estática de página única focada em con
     - Validar formato do preço
     - _Requirements: 3.2, 4.2, 7.2, 9.3_
 
-  - [ ] 13.2 Escrever teste de propriedade para tom comercial e sério
+  - [x] 13.2 Escrever teste de propriedade para tom comercial e sério
     - **Property 16: Tom Comercial e Sério**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
 

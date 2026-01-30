@@ -45,6 +45,20 @@ function initDatabase() {
     )
   `);
 
+  // Tabela de eventos (histórico completo)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lead_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      event_name TEXT NOT NULL,
+      event_data TEXT,
+      meta_response TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (lead_id) REFERENCES leads(lead_id)
+    )
+  `);
+
   console.log('✅ Banco de dados inicializado');
 }
 
@@ -138,6 +152,86 @@ function hasSale(leadId) {
 }
 
 /**
+ * Inserir evento no histórico
+ */
+function insertEvent(eventData) {
+  const stmt = db.prepare(`
+    INSERT INTO events (lead_id, event_type, event_name, event_data, meta_response)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+
+  try {
+    const result = stmt.run(
+      eventData.lead_id,
+      eventData.event_type,
+      eventData.event_name,
+      eventData.event_data ? JSON.stringify(eventData.event_data) : null,
+      eventData.meta_response ? JSON.stringify(eventData.meta_response) : null
+    );
+    return { success: true, id: result.lastInsertRowid };
+  } catch (error) {
+    console.error('Erro ao inserir evento:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Buscar eventos de um lead
+ */
+function getEventsByLeadId(leadId) {
+  const stmt = db.prepare(`
+    SELECT * FROM events 
+    WHERE lead_id = ? 
+    ORDER BY created_at DESC
+  `);
+  return stmt.all(leadId);
+}
+
+/**
+ * Buscar todos os eventos com filtro de data
+ */
+function getAllEvents(startDate = null, endDate = null) {
+  let query = `
+    SELECT e.*, l.utm_source, l.utm_campaign
+    FROM events e
+    LEFT JOIN leads l ON e.lead_id = l.lead_id
+  `;
+  
+  const params = [];
+  
+  if (startDate && endDate) {
+    query += ' WHERE e.created_at BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  } else if (startDate) {
+    query += ' WHERE e.created_at >= ?';
+    params.push(startDate);
+  } else if (endDate) {
+    query += ' WHERE e.created_at <= ?';
+    params.push(endDate);
+  }
+  
+  query += ' ORDER BY e.created_at DESC';
+  
+  const stmt = db.prepare(query);
+  return params.length > 0 ? stmt.all(...params) : stmt.all();
+}
+
+/**
+ * Obter estatísticas de eventos
+ */
+function getEventStats() {
+  const pageViews = db.prepare('SELECT COUNT(*) as count FROM events WHERE event_name = ?').get('PageView').count;
+  const contacts = db.prepare('SELECT COUNT(*) as count FROM events WHERE event_name = ?').get('Contact').count;
+  const purchases = db.prepare('SELECT COUNT(*) as count FROM events WHERE event_name = ?').get('Purchase').count;
+  
+  return {
+    pageViews,
+    contacts,
+    purchases
+  };
+}
+
+/**
  * Obter estatísticas
  */
 function getStats() {
@@ -160,5 +254,9 @@ module.exports = {
   getAllLeads,
   insertSale,
   hasSale,
-  getStats
+  getStats,
+  insertEvent,
+  getEventsByLeadId,
+  getAllEvents,
+  getEventStats
 };

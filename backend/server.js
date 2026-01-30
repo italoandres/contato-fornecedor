@@ -312,24 +312,26 @@ app.post('/api/sale', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Lead já possui venda registrada' });
     }
 
-    // Gerar event_id único
+    // Gerar event_id único (para deduplicação)
     const event_id = `sale_${lead_id}_${Date.now()}`;
 
-    // Preparar dados para Meta Conversions API
+    // Capturar IP real do admin (quem está marcando a venda)
+    const client_ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || req.ip;
+    const client_user_agent = req.headers['user-agent'];
+
+    // Preparar dados para Meta Conversions API (CAPI PURO)
     const eventData = {
       lead_id,
       event_id,
       value: parseFloat(sale_value),
       currency: 'BRL',
-      fbp: lead.fbp,
-      fbc: lead.fbc,
-      client_ip: lead.client_ip,
-      client_user_agent: lead.client_user_agent,
+      client_ip,
+      client_user_agent,
       event_time: Math.floor(Date.now() / 1000)
     };
 
     // Enviar para Meta com retry
-    console.log('📤 Enviando evento Purchase para Meta...');
+    console.log('📤 Enviando evento Purchase para Meta (CAPI PURO)...');
     console.log('Event Data:', JSON.stringify(eventData, null, 2));
     const metaResult = await meta.sendPurchaseEventWithRetry(eventData);
     console.log('Meta Result:', JSON.stringify(metaResult, null, 2));

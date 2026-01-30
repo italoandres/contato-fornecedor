@@ -88,15 +88,13 @@ async function sendContactEvent(eventData) {
 }
 
 /**
- * Enviar evento Purchase para Meta Conversions API
+ * Enviar evento Purchase para Meta Conversions API (CAPI PURO)
  * 
  * @param {Object} eventData - Dados do evento
  * @param {string} eventData.lead_id - ID do lead
  * @param {string} eventData.event_id - ID único do evento
  * @param {number} eventData.value - Valor da venda
  * @param {string} eventData.currency - Moeda (BRL)
- * @param {string} eventData.fbp - Cookie _fbp
- * @param {string} eventData.fbc - Cookie _fbc
  * @param {string} eventData.client_ip - IP do cliente
  * @param {string} eventData.client_user_agent - User Agent do cliente
  * @param {number} eventData.event_time - Timestamp do evento
@@ -109,33 +107,27 @@ async function sendPurchaseEvent(eventData) {
     throw new Error('META_PIXEL_ID e META_ACCESS_TOKEN devem estar configurados no .env');
   }
 
-  const url = `https://graph.facebook.com/v18.0/${pixelId}/events`;
+  const url = `https://graph.facebook.com/v19.0/${pixelId}/events`;
 
-  // Preparar dados do evento
+  // Hash do lead_id para external_id (identificação única do usuário)
+  const external_id = hashSHA256(eventData.lead_id);
+
+  // Preparar dados do evento (CAPI PURO - SEM fbp/fbc)
   const eventPayload = {
     data: [
       {
         event_name: 'Purchase',
         event_time: eventData.event_time || Math.floor(Date.now() / 1000),
-        event_id: eventData.event_id,
+        event_id: eventData.event_id, // IMPORTANTE: deduplicação
         action_source: 'website',
-        event_source_url: eventData.event_source_url || 'https://contatofornecedor.netlify.app',
         user_data: {
+          external_id: external_id, // Identificação única do usuário
           client_ip_address: eventData.client_ip,
-          client_user_agent: eventData.client_user_agent,
-          fbp: eventData.fbp,
-          fbc: eventData.fbc,
-          // Opcional: adicionar email/telefone hasheados se disponível
-          // em: hashSHA256(email),
-          // ph: hashSHA256(phone)
+          client_user_agent: eventData.client_user_agent
         },
         custom_data: {
-          value: parseFloat(eventData.value),
           currency: eventData.currency || 'BRL',
-          content_type: 'product',
-          content_name: 'Acesso ao Fabricante',
-          // Adicionar dados customizados se necessário
-          lead_id: eventData.lead_id
+          value: parseFloat(eventData.value)
         }
       }
     ],
@@ -143,8 +135,9 @@ async function sendPurchaseEvent(eventData) {
   };
 
   try {
-    console.log('📤 Enviando evento Purchase para Meta...');
+    console.log('📤 Enviando evento Purchase para Meta (CAPI PURO)...');
     console.log('Event ID:', eventData.event_id);
+    console.log('External ID:', external_id);
     console.log('Valor:', eventData.value, eventData.currency);
 
     const response = await axios.post(url, eventPayload);

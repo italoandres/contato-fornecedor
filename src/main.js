@@ -165,7 +165,7 @@ function updateWhatsAppLink(leadId) {
 function trackWhatsAppClick() {
   const whatsappButton = document.querySelector('.cta-button');
   if (whatsappButton) {
-    whatsappButton.addEventListener('click', function() {
+    whatsappButton.addEventListener('click', async function(e) {
       console.log('📱 Clique no botão WhatsApp rastreado');
       
       const leadId = localStorage.getItem('lead_id');
@@ -177,30 +177,33 @@ function trackWhatsAppClick() {
           content_name: 'WhatsApp Button Click',
           content_category: 'Lead Generation'
         });
-        console.log('✅ Evento Contact enviado para Facebook Pixel');
+        console.log('✅ Evento Contact enviado para Facebook Pixel (browser)');
       }
       
-      // Opcional: Enviar para backend também
-      sendWhatsAppClickToBackend(leadId);
+      // Enviar para backend (Conversions API)
+      if (leadId) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/whatsapp-click`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lead_id: leadId })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log('✅ Evento Contact enviado para Meta Conversions API');
+            console.log('Meta Response:', data.meta_response);
+          } else {
+            console.error('❌ Erro ao enviar Contact:', data.error);
+          }
+        } catch (error) {
+          console.error('❌ Erro ao registrar clique no backend:', error);
+        }
+      } else {
+        console.warn('⚠️ Lead ID não encontrado, evento Contact não enviado para backend');
+      }
     });
-  }
-}
-
-/**
- * Enviar clique no WhatsApp para o backend (opcional)
- */
-async function sendWhatsAppClickToBackend(leadId) {
-  if (!leadId) return;
-  
-  try {
-    await fetch(`${BACKEND_URL}/api/whatsapp-click`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lead_id: leadId })
-    });
-    console.log('✅ Clique no WhatsApp registrado no backend');
-  } catch (error) {
-    console.error('❌ Erro ao registrar clique:', error);
   }
 }
 

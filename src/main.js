@@ -145,17 +145,21 @@ async function sendLeadToBackend(trackingData) {
 function updateWhatsAppLink(leadId) {
   const whatsappButton = document.querySelector('.cta-button');
   if (whatsappButton && leadId) {
-    const currentHref = whatsappButton.getAttribute('href');
+    // Usar apenas os primeiros 8 caracteres do UUID
     const shortLeadId = leadId.substring(0, 8);
     
-    // Adicionar lead_id na mensagem
-    const newHref = currentHref.replace(
-      'Ol%C3%A1%2C%20tenho%20interesse',
-      `Ol%C3%A1%2C%20tenho%20interesse%20(ID%3A${shortLeadId})`
-    );
+    // Criar nova mensagem com ID curto
+    const baseMessage = 'Olá, tenho interesse no acesso ao fabricante e aceito o valor de R$197';
+    const messageWithId = `${baseMessage} (ID: ${shortLeadId})`;
+    const encodedMessage = encodeURIComponent(messageWithId);
     
+    // Atualizar href completo
+    const newHref = `https://wa.me/5518996969640?text=${encodedMessage}`;
     whatsappButton.setAttribute('href', newHref);
-    console.log('✅ Link do WhatsApp atualizado com Lead ID');
+    
+    console.log('✅ Link do WhatsApp atualizado');
+    console.log('Lead ID completo:', leadId);
+    console.log('Lead ID curto:', shortLeadId);
   }
 }
 
@@ -166,10 +170,16 @@ function trackWhatsAppClick() {
   const whatsappButton = document.querySelector('.cta-button');
   if (whatsappButton) {
     whatsappButton.addEventListener('click', async function(e) {
-      console.log('📱 Clique no botão WhatsApp rastreado');
+      console.log('📱 Clique no botão WhatsApp detectado!');
       
       const leadId = localStorage.getItem('lead_id');
-      console.log('Lead ID:', leadId);
+      console.log('Lead ID recuperado do localStorage:', leadId);
+      
+      if (!leadId) {
+        console.error('❌ Lead ID não encontrado! Evento Contact não será enviado.');
+        console.log('Verifique se o lead foi registrado corretamente ao carregar a página.');
+        return;
+      }
       
       // Enviar evento para o Facebook Pixel (browser)
       if (typeof fbq !== 'undefined') {
@@ -178,32 +188,36 @@ function trackWhatsAppClick() {
           content_category: 'Lead Generation'
         });
         console.log('✅ Evento Contact enviado para Facebook Pixel (browser)');
+      } else {
+        console.warn('⚠️ Facebook Pixel não encontrado');
       }
       
       // Enviar para backend (Conversions API)
-      if (leadId) {
-        try {
-          const response = await fetch(`${BACKEND_URL}/api/whatsapp-click`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lead_id: leadId })
-          });
-          
-          const data = await response.json();
-          
-          if (data.success) {
-            console.log('✅ Evento Contact enviado para Meta Conversions API');
-            console.log('Meta Response:', data.meta_response);
-          } else {
-            console.error('❌ Erro ao enviar Contact:', data.error);
-          }
-        } catch (error) {
-          console.error('❌ Erro ao registrar clique no backend:', error);
+      try {
+        console.log('📤 Enviando evento Contact para backend...');
+        
+        const response = await fetch(`${BACKEND_URL}/api/whatsapp-click`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lead_id: leadId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('✅ Evento Contact enviado para Meta Conversions API com sucesso!');
+          console.log('Meta Response:', data.meta_response);
+        } else {
+          console.error('❌ Erro ao enviar Contact para Meta:', data.error);
         }
-      } else {
-        console.warn('⚠️ Lead ID não encontrado, evento Contact não enviado para backend');
+      } catch (error) {
+        console.error('❌ Erro de rede ao enviar Contact:', error);
       }
     });
+    
+    console.log('✅ Rastreamento de clique no WhatsApp configurado');
+  } else {
+    console.error('❌ Botão WhatsApp não encontrado na página');
   }
 }
 

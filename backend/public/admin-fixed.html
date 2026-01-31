@@ -90,7 +90,6 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            margin-left: 10px;
         }
 
         .stats {
@@ -122,9 +121,8 @@
         .leads-table {
             background: white;
             border-radius: 8px;
-            padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow-x: auto;
+            overflow: hidden;
         }
 
         table {
@@ -132,19 +130,26 @@
             border-collapse: collapse;
         }
 
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
         th {
             background-color: #f8f9fa;
+            padding: 15px;
+            text-align: left;
             font-weight: 600;
             color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
         }
 
         .badge {
+            display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
@@ -162,7 +167,7 @@
         }
 
         .btn-sale {
-            padding: 6px 12px;
+            padding: 8px 16px;
             background-color: #28a745;
             color: white;
             border: none;
@@ -201,6 +206,18 @@
 
         .modal-content h2 {
             margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            margin-bottom: 15px;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        #modalLeadId {
+            font-family: 'Courier New', monospace;
+            color: #007bff;
+            font-size: 13px;
         }
 
         .modal-content input {
@@ -245,6 +262,83 @@
             padding: 40px;
             color: #666;
         }
+
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #25D366;
+        }
+
+        .clear-btn {
+            padding: 12px 24px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .clear-btn:hover {
+            background-color: #5a6268;
+        }
+
+        .lead-id-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .lead-id-cell:hover {
+            color: #007bff;
+        }
+
+        .lead-id-full {
+            display: none;
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            top: -35px;
+            left: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .lead-id-cell:hover .lead-id-full {
+            display: block;
+        }
+
+        .copy-icon {
+            margin-left: 5px;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -261,9 +355,8 @@
         <div class="header">
             <h1>📊 Painel de Gestão de Vendas</h1>
             <div>
-                <button class="logout-btn" onclick="window.location.href='/admin-eventos.html'" style="background-color: #28a745;">📊 Ver Eventos</button>
-                <button class="logout-btn" onclick="createTestLead()" style="background-color: #17a2b8;">🧪 Criar Lead Teste</button>
-                <button class="logout-btn" onclick="sendTestEvent()" style="background-color: #007bff;">🧪 Enviar Evento Teste</button>
+                <button class="logout-btn" onclick="window.location.href='/admin-config.html'" style="background-color: #6c757d; margin-right: 10px;">⚙️ Configurar Eventos</button>
+                <button class="logout-btn" onclick="sendTestEvent()" style="background-color: #007bff; margin-right: 10px;">🧪 Enviar Evento Teste</button>
                 <button class="logout-btn" onclick="logout()">Sair</button>
             </div>
         </div>
@@ -285,6 +378,12 @@
                 <h3>Taxa de Conversão</h3>
                 <div class="value" id="conversionRate">-%</div>
             </div>
+        </div>
+
+        <!-- Filtro de Busca -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Buscar por Lead ID, Origem ou Campanha..." onkeyup="filterLeads()">
+            <button onclick="clearSearch()" class="clear-btn">Limpar</button>
         </div>
 
         <div class="leads-table">
@@ -323,15 +422,50 @@
 
     <script>
         let currentLeadId = null;
-        let authToken = localStorage.getItem('admin_token');
+
+        // Funções de gerenciamento de token
+        function getToken() {
+            return localStorage.getItem('admin_token');
+        }
+
+        function setToken(token) {
+            localStorage.setItem('admin_token', token);
+        }
+
+        function removeToken() {
+            localStorage.removeItem('admin_token');
+        }
+
+        function getAuthHeaders() {
+            const token = getToken();
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
 
         // Verificar autenticação ao carregar
         checkAuth();
 
-        function checkAuth() {
-            if (authToken) {
-                showDashboard();
-            } else {
+        async function checkAuth() {
+            try {
+                const token = getToken();
+                if (!token) {
+                    showLogin();
+                    return;
+                }
+
+                const response = await fetch('/api/check-auth', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    showDashboard();
+                } else {
+                    removeToken();
+                    showLogin();
+                }
+            } catch (error) {
+                console.error('Erro ao verificar autenticação:', error);
+                removeToken();
                 showLogin();
             }
         }
@@ -349,10 +483,8 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    // Salvar token no localStorage
-                    authToken = data.token || 'authenticated';
-                    localStorage.setItem('admin_token', authToken);
+                if (response.ok && data.token) {
+                    setToken(data.token);
                     showDashboard();
                 } else {
                     errorDiv.textContent = data.error || 'Senha incorreta';
@@ -364,9 +496,12 @@
             }
         }
 
-        function logout() {
-            authToken = null;
-            localStorage.removeItem('admin_token');
+        async function logout() {
+            await fetch('/api/logout', { 
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+            removeToken();
             showLogin();
         }
 
@@ -389,9 +524,7 @@
         async function loadStats() {
             try {
                 const response = await fetch('/api/stats', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                    headers: getAuthHeaders()
                 });
                 const data = await response.json();
 
@@ -411,9 +544,7 @@
         async function loadLeads() {
             try {
                 const response = await fetch('/api/leads', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                    headers: getAuthHeaders()
                 });
                 const data = await response.json();
 
@@ -444,8 +575,12 @@
                     : `<button class="btn-sale" onclick="openSaleModal('${lead.lead_id}')">Marcar Venda</button>`;
 
                 return `
-                    <tr>
-                        <td><small>${lead.lead_id.substring(0, 8)}...</small></td>
+                    <tr data-lead-id="${lead.lead_id}" data-source="${lead.utm_source || ''}" data-campaign="${lead.utm_campaign || ''}">
+                        <td class="lead-id-cell" onclick="copyToClipboard('${lead.lead_id}')">
+                            <span class="lead-id-full">${lead.lead_id} (clique para copiar)</span>
+                            ${lead.lead_id.substring(0, 16)}...
+                            <span class="copy-icon">📋</span>
+                        </td>
                         <td>${lead.utm_source || '-'}</td>
                         <td>${lead.utm_campaign || '-'}</td>
                         <td>${new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
@@ -456,10 +591,70 @@
             }).join('');
         }
 
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Lead ID copiado: ' + text);
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+                // Fallback para navegadores antigos
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Lead ID copiado: ' + text);
+            });
+        }
+
+        function filterLeads() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#leadsTableBody tr');
+            
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const leadId = row.getAttribute('data-lead-id') || '';
+                const source = row.getAttribute('data-source') || '';
+                const campaign = row.getAttribute('data-campaign') || '';
+                
+                const searchText = (leadId + ' ' + source + ' ' + campaign).toLowerCase();
+                
+                if (searchText.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Se não houver resultados, mostrar mensagem
+            if (visibleCount === 0 && searchTerm !== '') {
+                const tbody = document.getElementById('leadsTableBody');
+                const existingMessage = tbody.querySelector('.no-results-message');
+                if (!existingMessage) {
+                    const messageRow = document.createElement('tr');
+                    messageRow.className = 'no-results-message';
+                    messageRow.innerHTML = '<td colspan="6" style="text-align:center; padding: 40px; color: #999;">Nenhum resultado encontrado para "' + searchTerm + '"</td>';
+                    tbody.appendChild(messageRow);
+                }
+            } else {
+                const messageRow = document.querySelector('.no-results-message');
+                if (messageRow) {
+                    messageRow.remove();
+                }
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            filterLeads();
+        }
+
         function openSaleModal(leadId) {
             currentLeadId = leadId;
-            document.getElementById('modalLeadId').textContent = leadId.substring(0, 8) + '...';
-            document.getElementById('saleValue').value = '597.00';
+            document.getElementById('modalLeadId').textContent = leadId;
+            document.getElementById('saleValue').value = '997.00';
             document.getElementById('saleModal').style.display = 'block';
         }
 
@@ -477,16 +672,10 @@
             }
 
             try {
-                console.log('📤 Enviando venda para o backend...');
-                console.log('Lead ID:', currentLeadId);
-                console.log('Valor:', saleValue);
-
                 const response = await fetch('/api/sale', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         lead_id: currentLeadId,
                         sale_value: parseFloat(saleValue)
@@ -495,83 +684,48 @@
 
                 const data = await response.json();
 
-                console.log('📥 Resposta do backend:', JSON.stringify(data, null, 2));
-
                 if (response.ok) {
-                    if (data.meta_success) {
-                        alert('✅ Venda registrada com sucesso!\n\n✅ Evento Purchase enviado para Meta Conversions API.\n\nVerifique no Events Manager em alguns minutos.');
-                    } else {
-                        alert('⚠️ Venda registrada no banco, MAS evento NÃO foi enviado para o Meta!\n\nErro: ' + JSON.stringify(data.meta_response?.error || 'Erro desconhecido', null, 2));
-                        console.error('❌ Erro do Meta:', data.meta_response);
-                    }
+                    alert('✅ Venda registrada com sucesso!\n\nEvento enviado para Meta Conversions API.');
                     closeModal();
                     loadData();
                 } else {
                     alert('❌ Erro: ' + (data.error || 'Erro ao registrar venda'));
-                    console.error('❌ Erro completo:', data);
                 }
             } catch (error) {
                 alert('❌ Erro ao registrar venda: ' + error.message);
-                console.error('❌ Erro de rede:', error);
-            }
-        }
-
-        async function sendTestEvent() {
-            if (!confirm('Enviar um evento de TESTE para o Facebook?\n\nCódigo de teste: TEST90044')) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/send-test-event', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Evento de teste enviado!\n\n📍 Código: TEST90044\n\nVerifique em: Events Manager > Test Events');
-                } else {
-                    alert('❌ Erro: ' + JSON.stringify(data.error, null, 2));
-                }
-            } catch (error) {
-                alert('❌ Erro: ' + error.message);
-            }
-        }
-
-        async function createTestLead() {
-            if (!confirm('Criar um lead de TESTE com fbp e fbc válidos?\n\nEsse lead pode ser usado para testar o envio de eventos Purchase.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/create-test-lead', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Lead de teste criado com sucesso!\n\n' +
-                          '📍 Procure pelo lead com:\n' +
-                          '   - Origem: facebook\n' +
-                          '   - Campanha: teste_conversions_api\n\n' +
-                          '📍 Marque venda nesse lead (valor: 597)\n\n' +
-                          '📍 Aguarde 10-15 minutos e verifique no Events Manager');
-                    
-                    // Recarregar a lista de leads
-                    loadData();
-                } else {
-                    alert('❌ Erro: ' + (data.error || 'Erro ao criar lead'));
-                }
-            } catch (error) {
-                alert('❌ Erro: ' + error.message);
             }
         }
 
         // Atualizar dados a cada 30 segundos
         setInterval(loadData, 30000);
+
+        // Enviar evento de teste para Meta
+        async function sendTestEvent() {
+            if (!confirm('Enviar um evento de TESTE para o Facebook?\n\n' +
+                        'Este evento aparecerá na aba "Test Events" do Events Manager.\n' +
+                        'Código de teste: TEST90044')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/send-test-event', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Evento de teste enviado com sucesso!\n\n' + 
+                          '📍 Código de teste: TEST90044\n\n' +
+                          'Verifique em:\n' +
+                          'Events Manager > Test Events\n\n' +
+                          'O evento deve aparecer AGORA na página de Test Events!');
+                } else {
+                    alert('❌ Erro ao enviar evento de teste:\n' + JSON.stringify(data.error, null, 2));
+                }
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>

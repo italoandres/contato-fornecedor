@@ -332,6 +332,17 @@ body {
     text-align: center;
 }
 
+.urgency-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #dc3545;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #fff3cd;
+    border-left: 4px solid #dc3545;
+    border-radius: 4px;
+}
+
 .cta-button {
     display: inline-block;
     background-color: #25D366;

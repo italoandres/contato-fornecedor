@@ -59,6 +59,32 @@ function initDatabase() {
     )
   `);
 
+  // Tabela de configurações de eventos
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS event_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_name TEXT UNIQUE NOT NULL,
+      enabled INTEGER DEFAULT 1,
+      description TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Inserir configurações padrão se não existirem
+  const checkConfig = db.prepare('SELECT COUNT(*) as count FROM event_config').get();
+  if (checkConfig.count === 0) {
+    const insertConfig = db.prepare(`
+      INSERT INTO event_config (event_name, enabled, description) 
+      VALUES (?, ?, ?)
+    `);
+    
+    insertConfig.run('PageView', 1, 'Evento disparado quando alguém visita a landing page');
+    insertConfig.run('Contact', 1, 'Evento disparado quando alguém clica no botão WhatsApp');
+    insertConfig.run('Purchase', 1, 'Evento disparado quando uma venda é marcada no painel admin');
+    
+    console.log('✅ Configurações padrão de eventos criadas');
+  }
+
   console.log('✅ Banco de dados inicializado');
 }
 
@@ -247,6 +273,42 @@ function getStats() {
   };
 }
 
+/**
+ * Obter configurações de eventos
+ */
+function getEventConfig() {
+  const stmt = db.prepare('SELECT * FROM event_config ORDER BY id');
+  return stmt.all();
+}
+
+/**
+ * Atualizar configuração de evento
+ */
+function updateEventConfig(eventName, enabled) {
+  const stmt = db.prepare(`
+    UPDATE event_config 
+    SET enabled = ?, updated_at = CURRENT_TIMESTAMP 
+    WHERE event_name = ?
+  `);
+  
+  try {
+    const result = stmt.run(enabled ? 1 : 0, eventName);
+    return { success: true, changes: result.changes };
+  } catch (error) {
+    console.error('Erro ao atualizar configuração:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Verificar se um evento está habilitado
+ */
+function isEventEnabled(eventName) {
+  const stmt = db.prepare('SELECT enabled FROM event_config WHERE event_name = ?');
+  const result = stmt.get(eventName);
+  return result ? result.enabled === 1 : true; // Se não existir, assume habilitado
+}
+
 module.exports = {
   initDatabase,
   insertLead,
@@ -258,5 +320,8 @@ module.exports = {
   insertEvent,
   getEventsByLeadId,
   getAllEvents,
-  getEventStats
+  getEventStats,
+  getEventConfig,
+  updateEventConfig,
+  isEventEnabled
 };

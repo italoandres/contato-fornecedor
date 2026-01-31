@@ -115,13 +115,18 @@ app.post('/api/lead', (req, res) => {
     if (result.success) {
       console.log('✅ Novo lead registrado:', lead_id);
       
-      // Registrar evento PageView no histórico
-      db.insertEvent({
-        lead_id,
-        event_type: 'pageview',
-        event_name: 'PageView',
-        event_data: { utm_source, utm_campaign, fbclid }
-      });
+      // Registrar evento PageView no histórico (se habilitado)
+      if (db.isEventEnabled('PageView')) {
+        db.insertEvent({
+          lead_id,
+          event_type: 'pageview',
+          event_name: 'PageView',
+          event_data: { utm_source, utm_campaign, fbclid }
+        });
+        console.log('📊 Evento PageView registrado');
+      } else {
+        console.log('⏭️  Evento PageView desabilitado - não registrado');
+      }
       
       res.json({ 
         success: true, 
@@ -161,6 +166,17 @@ app.post('/api/whatsapp-click', async (req, res) => {
     const lead = db.getLeadById(lead_id);
     if (!lead) {
       return res.status(404).json({ error: 'Lead não encontrado' });
+    }
+
+    // Verificar se evento Contact está habilitado
+    if (!db.isEventEnabled('Contact')) {
+      console.log('⏭️  Evento Contact desabilitado - não será enviado');
+      return res.json({
+        success: true,
+        message: 'Clique registrado (evento Contact desabilitado)',
+        meta_success: false,
+        disabled: true
+      });
     }
 
     // Gerar event_id único
@@ -310,6 +326,37 @@ app.post('/api/sale', requireAuth, async (req, res) => {
     // Verificar se já tem venda registrada
     if (db.hasSale(lead_id)) {
       return res.status(400).json({ error: 'Lead já possui venda registrada' });
+    }
+
+    // Verificar se evento Purchase está habilitado
+    if (!db.isEventEnabled('Purchase')) {
+      console.log('⏭️  Evento Purchase desabilitado - venda será salva mas evento não será enviado');
+      
+      // Salvar venda no banco mesmo com evento desabilitado
+      const saleData = {
+        lead_id,
+        sale_value: parseFloat(sale_value),
+        currency: 'BRL',
+        event_id: `sale_${lead_id}_${Date.now()}`,
+        meta_response: JSON.stringify({ disabled: true, message: 'Evento desabilitado' })
+      };
+      
+      const dbResult = db.insertSale(saleData);
+      
+      if (dbResult.success) {
+        return res.json({
+          success: true,
+          message: 'Venda registrada (evento Purchase desabilitado)',
+          sale_id: dbResult.id,
+          meta_success: false,
+          disabled: true
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: 'Erro ao salvar venda no banco'
+        });
+      }
     }
 
     // Gerar event_id único (para deduplicação)
@@ -476,6 +523,48 @@ app.get('/api/create-test-lead', requireAuth, (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao criar lead de teste:', error);
     res.status(500).json({ error: 'Erro ao criar lead de teste' });
+  }
+});
+
+// GET /api/event-config - Obter configurações de eventos
+app.get('/api/event-config', requireAuth, (req, res) => {
+  try {
+    const config = db.getEventConfig();
+    res.json({ success: true, config });
+  } catch (error) {
+    console.error('❌ Erro ao buscar configurações:', error);
+    res.status(500).json({ error: 'Erro ao buscar configurações' });
+  }
+});
+
+// POST /api/event-config - Atualizar configuração de evento
+app.post('/api/event-config', requireAuth, (req, res) => {
+  try {
+    const { event_name, enabled } = req.body;
+    
+    if (!event_name || enabled === undefined) {
+      return res.status(400).json({ 
+        error: 'event_name e enabled são obrigatórios' 
+      });
+    }
+    
+    const result = db.updateEventConfig(event_name, enabled);
+    
+    if (result.success) {
+      console.log(`✅ Configuração atualizada: ${event_name} = ${enabled ? 'habilitado' : 'desabilitado'}`);
+      res.json({ 
+        success: true, 
+        message: 'Configuração atualizada com sucesso' 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: result.error 
+      });
+    }
+  } catch (error) {
+    console.error('❌ Erro ao atualizar configuração:', error);
+    res.status(500).json({ error: 'Erro ao atualizar configuração' });
   }
 });
 

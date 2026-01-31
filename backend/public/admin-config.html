@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações de Eventos - Painel Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .events-config {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .events-config h2 {
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .event-item:hover {
+            border-color: #2196f3;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+        }
+
+        .event-item.enabled {
+            background: #f1f8e9;
+            border-color: #8bc34a;
+        }
+
+        .event-item.disabled {
+            background: #fafafa;
+            border-color: #e0e0e0;
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .event-description {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4caf50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 15px;
+        }
+
+        .badge-enabled {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .badge-disabled {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .success-message {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Configurações de Eventos</h1>
+            <button class="btn btn-secondary" onclick="window.location.href='/admin.html'">← Voltar</button>
+        </div>
+
+        <div class="info-box">
+            <h3>ℹ️ Como funciona</h3>
+            <p>
+                Aqui você pode habilitar ou desabilitar o envio de eventos para o Facebook Ads. 
+                Quando um evento está <strong>desabilitado</strong>, ele não será enviado para a Meta Conversions API, 
+                mas continuará sendo registrado no histórico do sistema para sua análise.
+            </p>
+            <p style="margin-top: 10px;">
+                <strong>Importante:</strong> As alterações são salvas automaticamente e aplicadas imediatamente.
+            </p>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            ✅ Configuração salva com sucesso!
+        </div>
+
+        <div class="events-config">
+            <h2>📊 Eventos Disponíveis</h2>
+            <div id="eventsContainer">
+                <div class="loading">Carregando configurações...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('admin_token');
+
+        // Verificar autenticação
+        if (!authToken) {
+            window.location.href = '/admin.html';
+        }
+
+        // Carregar configurações ao iniciar
+        loadConfig();
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/event-config', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    renderConfig(data.config);
+                } else {
+                    document.getElementById('eventsContainer').innerHTML = 
+                        '<div class="loading">Erro ao carregar configurações</div>';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('eventsContainer').innerHTML = 
+                    '<div class="loading">Erro ao carregar configurações</div>';
+            }
+        }
+
+        function renderConfig(config) {
+            const container = document.getElementById('eventsContainer');
+
+            if (config.length === 0) {
+                container.innerHTML = '<div class="loading">Nenhuma configuração encontrada</div>';
+                return;
+            }
+
+            const html = config.map(event => {
+                const isEnabled = event.enabled === 1;
+                const statusClass = isEnabled ? 'enabled' : 'disabled';
+                const badgeClass = isEnabled ? 'badge-enabled' : 'badge-disabled';
+                const statusText = isEnabled ? 'Habilitado' : 'Desabilitado';
+
+                return `
+                    <div class="event-item ${statusClass}">
+                        <div class="event-info">
+                            <div class="event-name">
+                                ${event.event_name}
+                                <span class="status-badge ${badgeClass}">${statusText}</span>
+                            </div>
+                            <div class="event-description">${event.description}</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" 
+                                   ${isEnabled ? 'checked' : ''} 
+                                   onchange="toggleEvent('${event.event_name}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        async function toggleEvent(eventName, enabled) {
+            try {
+                const response = await fetch('/api/event-config', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event_name: eventName,
+                        enabled: enabled
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccessMessage();
+                    // Recarregar configurações para atualizar a UI
+                    setTimeout(loadConfig, 500);
+                } else {
+                    alert('Erro ao salvar configuração: ' + (data.error || 'Erro desconhecido'));
+                    // Reverter o toggle
+                    loadConfig();
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao salvar configuração');
+                // Reverter o toggle
+                loadConfig();
+            }
+        }
+
+        function showSuccessMessage() {
+            const message = document.getElementById('successMessage');
+            message.classList.add('show');
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -280,6 +280,7 @@
             border-radius: 4px;
             font-size: 16px;
             transition: border-color 0.3s;
+            min-width: 150px;
         }
 
         .search-box input:focus {
@@ -383,6 +384,8 @@
         <!-- Filtro de Busca -->
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="🔍 Buscar por Lead ID, Origem ou Campanha..." onkeyup="filterLeads()">
+            <input type="date" id="startDate" placeholder="Data Início">
+            <input type="date" id="endDate" placeholder="Data Fim">
             <button onclick="clearSearch()" class="clear-btn">Limpar</button>
         </div>
 
@@ -574,8 +577,20 @@
                     ? `<button class="btn-sale" disabled>R$ ${parseFloat(lead.sale_value).toFixed(2)}</button>`
                     : `<button class="btn-sale" onclick="openSaleModal('${lead.lead_id}')">Marcar Venda</button>`;
 
+                // Formatar data e hora no fuso de São Paulo
+                const dateTime = new Date(lead.created_at);
+                const saoPauloDateTime = dateTime.toLocaleString('pt-BR', {
+                    timeZone: 'America/Sao_Paulo',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
                 return `
-                    <tr data-lead-id="${lead.lead_id}" data-source="${lead.utm_source || ''}" data-campaign="${lead.utm_campaign || ''}">
+                    <tr data-lead-id="${lead.lead_id}" data-source="${lead.utm_source || ''}" data-campaign="${lead.utm_campaign || ''}" data-date="${lead.created_at}">
                         <td class="lead-id-cell" onclick="copyToClipboard('${lead.lead_id}')">
                             <span class="lead-id-full">${lead.lead_id} (clique para copiar)</span>
                             ${lead.lead_id.substring(0, 16)}...
@@ -583,7 +598,7 @@
                         </td>
                         <td>${lead.utm_source || '-'}</td>
                         <td>${lead.utm_campaign || '-'}</td>
-                        <td>${new Date(lead.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td>${saoPauloDateTime}</td>
                         <td>${statusBadge}</td>
                         <td>${actionButton}</td>
                     </tr>
@@ -609,6 +624,8 @@
 
         function filterLeads() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
             const rows = document.querySelectorAll('#leadsTableBody tr');
             
             let visibleCount = 0;
@@ -617,10 +634,24 @@
                 const leadId = row.getAttribute('data-lead-id') || '';
                 const source = row.getAttribute('data-source') || '';
                 const campaign = row.getAttribute('data-campaign') || '';
+                const dateStr = row.getAttribute('data-date') || '';
                 
+                // Filtro de texto
                 const searchText = (leadId + ' ' + source + ' ' + campaign).toLowerCase();
+                const matchesSearch = searchText.includes(searchTerm);
                 
-                if (searchText.includes(searchTerm)) {
+                // Filtro de data
+                let matchesDate = true;
+                if (dateStr && (startDate || endDate)) {
+                    const leadDate = new Date(dateStr);
+                    const start = startDate ? new Date(startDate + 'T00:00:00') : null;
+                    const end = endDate ? new Date(endDate + 'T23:59:59') : null;
+                    
+                    if (start && leadDate < start) matchesDate = false;
+                    if (end && leadDate > end) matchesDate = false;
+                }
+                
+                if (matchesSearch && matchesDate) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
@@ -629,13 +660,13 @@
             });
             
             // Se não houver resultados, mostrar mensagem
-            if (visibleCount === 0 && searchTerm !== '') {
+            if (visibleCount === 0 && (searchTerm !== '' || startDate || endDate)) {
                 const tbody = document.getElementById('leadsTableBody');
                 const existingMessage = tbody.querySelector('.no-results-message');
                 if (!existingMessage) {
                     const messageRow = document.createElement('tr');
                     messageRow.className = 'no-results-message';
-                    messageRow.innerHTML = '<td colspan="6" style="text-align:center; padding: 40px; color: #999;">Nenhum resultado encontrado para "' + searchTerm + '"</td>';
+                    messageRow.innerHTML = '<td colspan="6" style="text-align:center; padding: 40px; color: #999;">Nenhum resultado encontrado com os filtros aplicados</td>';
                     tbody.appendChild(messageRow);
                 }
             } else {
@@ -648,6 +679,8 @@
 
         function clearSearch() {
             document.getElementById('searchInput').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
             filterLeads();
         }
 
